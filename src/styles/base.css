@@ -1,0 +1,61 @@
+/* 색·글꼴 토큰과 공통 요소. 전술 상황판 스타일의 어두운 화면 하나만 씁니다. */
+:root {
+  color-scheme: dark;
+  --bg: #171b11;
+  --panel: rgba(34, 41, 26, 0.94);
+  --panel-2: #2a3220;
+  --line: #48532f;
+  --line-soft: #333b24;
+  --khaki: #9a9465;
+  --text: #e8e5d0;
+  --muted: #a8a68b;
+  --amber: #f2a900;
+  --cyan: #3fd0c9;
+  --green: #5fd36d;
+  --red: #ff5050;
+  --ink: #12140c;
+  --font: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --mono: Consolas, "D2Coding", "Cascadia Mono", ui-monospace, monospace;
+  --camo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' shape-rendering='crispEdges'%3E%3Cg fill='%23262d1b'%3E%3Crect width='24' height='12'/%3E%3Crect x='12' y='12' width='12' height='12'/%3E%3Crect x='48' y='24' width='24' height='12'/%3E%3Crect x='60' y='36' width='24' height='12'/%3E%3Crect x='24' y='60' width='12' height='24'/%3E%3Crect x='72' y='72' width='24' height='12'/%3E%3C/g%3E%3Cg fill='%231e2416'%3E%3Crect x='36' width='12' height='12'/%3E%3Crect y='36' width='24' height='12'/%3E%3Crect x='84' y='12' width='12' height='24'/%3E%3Crect x='48' y='60' width='12' height='12'/%3E%3Crect y='84' width='36' height='12'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image: var(--camo);
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+ul, ol { margin: 0; padding: 0; }
+
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.tiny { font-size: 11px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.btn {
+  border: 1px solid var(--khaki);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 7px 14px;
+  font-weight: 600;
+}
+.btn:hover:not(:disabled) { border-color: var(--amber); }
+.btn.primary { background: var(--amber); border-color: var(--amber); color: #1a1a0f; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn.small { padding: 4px 10px; font-size: 12px; }
+.btn.large { font-size: 16px; padding: 10px 26px; }
+.btn:disabled { opacity: 0.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

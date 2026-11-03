@@ -1,0 +1,12 @@
+{
+  "name": "손 제스처 슬라이드 넘김 도구",
+  "short_name": "손 슬라이드",
+  "description": "노트북 카메라 앞에서 손 동작만으로 발표 슬라이드를 넘기는 도구",
+  "lang": "ko",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#171b11",
+  "theme_color": "#171b11",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

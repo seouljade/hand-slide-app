@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.local
+.env
+.env.*
+!.env.example
+# scripts/fetch-assets.mjs 가 만드는 파일
+public/mediapipe/

@@ -1,0 +1,10 @@
+/// <reference types="vite/client" />
+
+declare const __MEDIAPIPE_VERSION__: string;
+declare const __APP_VERSION__: string;
+
+interface ImportMetaEnv {
+  readonly VITE_LOGO_SRC?: string;
+  readonly VITE_SUPABASE_URL?: string;
+  readonly VITE_SUPABASE_ANON_KEY?: string;
+}
