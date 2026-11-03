@@ -67,7 +67,7 @@ describe("이벤트 기록 (F4-6)", () => {
   });
 
   it("카메라 꺼짐과 복귀를 기록하고 점검 상태도 바꾼다", () => {
-    let s = run(passAll(initialState()), { type: "cameraOff", message: "끊김", at: 0 });
+    let s = run(passAll(initialState()), { type: "cameraOff", issue: "lost", message: "끊김", at: 0 });
     expect(s.camera).toBe("off");
     expect(s.checks.camera.status).toBe("fail");
     expect(s.log[0].text).toBe("카메라 꺼짐");

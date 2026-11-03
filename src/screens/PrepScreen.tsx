@@ -31,7 +31,7 @@ export function PrepScreen({ state, dispatch }: Props) {
       <div className="prep-col">
         <Panel code="STEP 3" title="동작 연습">
           <div className="practice">
-            <CameraView camera={state.camera} message={state.cameraMessage} />
+            <CameraView camera={state.camera} issue={state.cameraIssue} />
             <div className="cards">
               <PracticeCard gesture="next" count={state.practice.next} name="다음 ▶"
                 desc="엄지와 검지를 붙이고 나머지 세 손가락은 폅니다 (OK 사인)." />

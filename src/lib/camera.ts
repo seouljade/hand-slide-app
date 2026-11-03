@@ -1,21 +1,63 @@
 import { MESSAGES, TIMING } from "../config";
 
-export type CameraErrorKind = "denied" | "busy" | "notFound" | "insecure" | "unknown";
+export type CameraErrorKind = "denied" | "dismissed" | "osBlocked" | "busy" | "notFound" | "insecure" | "unknown";
 
 export const CAMERA_ERROR_MESSAGE: Record<CameraErrorKind, string> = {
   denied: MESSAGES.cameraDenied,
+  dismissed: MESSAGES.cameraDismissed,
+  osBlocked: MESSAGES.cameraOsBlocked,
   busy: MESSAGES.cameraBusy,
   notFound: MESSAGES.cameraNotFound,
   insecure: MESSAGES.cameraInsecure,
   unknown: MESSAGES.cameraUnknown,
 };
 
-/** getUserMedia 오류를 PRD 8장의 안내 문구 종류로 나눕니다. */
-export function classifyCameraError(err: unknown): CameraErrorKind {
-  const name = (err as { name?: string } | null)?.name;
+/** 이 사이트에 대한 브라우저의 카메라 권한 상태 */
+export type CameraPermission = "granted" | "denied" | "prompt" | "unknown";
+
+async function permissionStatus(): Promise<PermissionStatus | null> {
+  try {
+    return await navigator.permissions.query({ name: "camera" as PermissionName });
+  } catch {
+    return null; // Permissions API 에서 camera 를 지원하지 않는 브라우저
+  }
+}
+
+export async function queryCameraPermission(): Promise<CameraPermission> {
+  return (await permissionStatus())?.state ?? "unknown";
+}
+
+/** 사용자가 주소창에서 카메라 권한을 바꾸면 알려 줍니다. 반환값을 호출하면 감시를 멈춥니다. */
+export function watchCameraPermission(onChange: (p: CameraPermission) => void): () => void {
+  let status: PermissionStatus | null = null;
+  let stopped = false;
+  const handler = () => status && onChange(status.state);
+  permissionStatus().then((s) => {
+    if (stopped || !s) return;
+    status = s;
+    s.addEventListener("change", handler);
+  });
+  return () => {
+    stopped = true;
+    status?.removeEventListener("change", handler);
+  };
+}
+
+/**
+ * getUserMedia 오류를 안내 문구 종류로 나눕니다 (PRD 8장).
+ * 권한 거부는 권한 상태를 함께 보아 세 가지로 나눕니다.
+ * - 사이트 권한이 "차단" → denied (주소창에서 허용)
+ * - 사이트 권한이 "묻기"인데 거부 → dismissed (요청 창을 닫음, 다시 요청 가능)
+ * - 사이트 권한은 "허용"인데 거부, 또는 시스템 거부 → osBlocked (Windows 카메라 설정)
+ */
+export function classifyCameraError(err: unknown, permission: CameraPermission = "unknown"): CameraErrorKind {
+  const { name, message = "" } = (err as { name?: string; message?: string } | null) ?? {};
   switch (name) {
     case "NotAllowedError":
     case "PermissionDeniedError":
+      if (/system/i.test(message) || permission === "granted") return "osBlocked";
+      if (permission === "prompt") return "dismissed";
+      return "denied";
     case "SecurityError":
       return "denied";
     case "NotReadableError":
@@ -60,7 +102,7 @@ export class CameraController {
         audio: false,
       });
     } catch (err) {
-      return { ok: false, kind: classifyCameraError(err) };
+      return { ok: false, kind: classifyCameraError(err, await queryCameraPermission()) };
     }
     const track = this.stream.getVideoTracks()[0];
     this.onEnded = onEnded;

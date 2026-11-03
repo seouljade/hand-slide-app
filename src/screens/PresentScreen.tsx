@@ -27,7 +27,7 @@ export function PresentScreen({ state, dispatch }: Props) {
             </button>
           }
         >
-          <CameraView camera={state.camera} message={state.cameraMessage} previewHidden={state.previewHidden} />
+          <CameraView camera={state.camera} issue={state.cameraIssue} previewHidden={state.previewHidden} />
         </Panel>
         <RecognitionPanel cameraOn={state.camera === "on"} holdSec={state.settings.holdSec} />
       </div>

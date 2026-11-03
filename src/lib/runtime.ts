@@ -1,6 +1,8 @@
 import { DEFAULT_SETTINGS, MESSAGES, TIMING, type RecognitionSettings } from "../config";
 import type { Action, Screen } from "../state/appState";
-import { CAMERA_ERROR_MESSAGE, CameraController } from "./camera";
+import {
+  CAMERA_ERROR_MESSAGE, CameraController, queryCameraPermission, watchCameraPermission, type CameraErrorKind,
+} from "./camera";
 import { checkNetwork, currentBrowserInfo, detectBrowser } from "./checks";
 import { drawHand, drawSimBackground } from "./drawHand";
 import { GestureEngine, IDLE_STATE, type EngineState } from "./engine";
@@ -44,6 +46,9 @@ export class Runtime {
   private screen: Screen = "prep";
   private simHand: Landmark[] | null = null;
   private raf = 0;
+  private opening: Promise<boolean> | null = null;
+  private stopRecovery: (() => void) | null = null;
+  private autoStarted = false;
   private watchdog = 0;
   private frame: FrameSnapshot = EMPTY_FRAME;
   private frameSig = frameKey(EMPTY_FRAME);
@@ -98,6 +103,7 @@ export class Runtime {
   }
 
   stop(): void {
+    this.cancelRecovery();
     cancelAnimationFrame(this.raf);
     clearInterval(this.watchdog);
     this.raf = 0;
@@ -127,12 +133,28 @@ export class Runtime {
     return ok;
   }
 
+  /**
+   * 첫 화면에서 한 번 부릅니다. 이 사이트에 카메라가 이미 허용되어 있으면
+   * 버튼을 누르지 않아도 점검을 바로 시작합니다.
+   */
+  async autoStart(): Promise<void> {
+    if (this.autoStarted || this.sim) return;
+    this.autoStarted = true;
+    if ((await queryCameraPermission()) === "granted") await this.runChecks();
+  }
+
   /** 시험용: 카메라가 끊긴 상황을 흉내 냅니다. */
   simulateCameraLoss(): void {
     this.handleCameraLost();
   }
 
-  private async openCamera(): Promise<boolean> {
+  /** 카메라 열기. 버튼과 자동 재연결이 겹쳐도 한 번만 엽니다. */
+  private openCamera(): Promise<boolean> {
+    this.opening ??= this.doOpenCamera().finally(() => { this.opening = null; });
+    return this.opening;
+  }
+
+  private async doOpenCamera(): Promise<boolean> {
     if (this.sim) {
       this.cameraOn = true;
       this.dispatch({ type: "check", key: "camera", result: { status: "ok", detail: "가상 카메라" } });
@@ -144,9 +166,11 @@ export class Runtime {
       const hint = CAMERA_ERROR_MESSAGE[r.kind];
       this.cameraOn = false;
       this.dispatch({ type: "check", key: "camera", result: { status: "fail", hint } });
-      this.dispatch({ type: "cameraOff", message: hint, at: Date.now() });
+      this.dispatch({ type: "cameraOff", issue: r.kind, message: hint, at: Date.now() });
+      this.scheduleRecovery(r.kind);
       return false;
     }
+    this.cancelRecovery();
     if (this.video) this.camera.attach(this.video);
     this.cameraOn = true;
     this.dispatch({ type: "check", key: "camera", result: { status: "ok", detail: `${r.width}×${r.height}` } });
@@ -192,7 +216,39 @@ export class Runtime {
     this.cameraOn = false;
     this.camera.stop();
     this.engine.reset();
-    this.dispatch({ type: "cameraOff", message: MESSAGES.cameraLost, at: Date.now() });
+    this.dispatch({ type: "cameraOff", issue: "lost", message: MESSAGES.cameraLost, at: Date.now() });
+    this.scheduleRecovery("lost");
+  }
+
+  /**
+   * 원인이 풀리면 저절로 다시 연결합니다.
+   * - 주소창에서 차단 → 허용으로 바꾸면 권한 변경 알림을 받아 바로 연결
+   * - Windows 설정 차단, 다른 프로그램 사용 중, 카메라 없음, 연결 끊김 → 몇 초마다 다시 시도
+   * - 요청 창을 닫은 경우는 다시 묻는 창이 갑자기 뜨지 않도록 버튼을 누를 때만 시도
+   */
+  private scheduleRecovery(issue: CameraErrorKind | "lost"): void {
+    this.cancelRecovery();
+    if (this.sim) return;
+    const retry = () => {
+      if (!this.cameraOn) void this.retryCamera();
+    };
+    if (issue === "denied") {
+      this.stopRecovery = watchCameraPermission((p) => {
+        if (p === "granted") retry();
+      });
+    } else if (issue === "osBlocked" || issue === "busy" || issue === "notFound" || issue === "lost") {
+      const id = window.setInterval(retry, TIMING.cameraRetryMs);
+      navigator.mediaDevices?.addEventListener("devicechange", retry);
+      this.stopRecovery = () => {
+        clearInterval(id);
+        navigator.mediaDevices?.removeEventListener("devicechange", retry);
+      };
+    }
+  }
+
+  private cancelRecovery(): void {
+    this.stopRecovery?.();
+    this.stopRecovery = null;
   }
 
   // ── 프레임 처리 ──

@@ -54,6 +54,8 @@ export const TIMING = {
   watchdogMs: 500,
   cameraStallMs: 1500,
   cameraMutedMs: 1000,
+  /** 카메라를 쓸 수 없을 때 저절로 다시 시도하는 주기 */
+  cameraRetryMs: 3000,
   toastMs: 1100,
   signalMs: 700,
 } as const;
@@ -71,6 +73,8 @@ export const LOGO_SRC: string = import.meta.env.VITE_LOGO_SRC ?? "";
 /** PRD 8장 오류 안내 문구 */
 export const MESSAGES = {
   cameraDenied: "카메라 권한이 꺼져 있습니다. 주소창의 카메라 아이콘에서 허용해 주세요.",
+  cameraDismissed: "카메라 사용 요청이 닫혔습니다. \"카메라 켜기\"를 누르고 \"허용\"을 선택해 주세요.",
+  cameraOsBlocked: "Windows 설정에서 카메라가 꺼져 있습니다. Windows 카메라 설정에서 켜 주세요.",
   cameraBusy: "다른 프로그램이 카메라를 쓰고 있습니다. 화상회의 등을 종료한 뒤 다시 점검하세요.",
   cameraNotFound: "연결된 카메라를 찾을 수 없습니다.",
   cameraInsecure: "보안 연결(https://)로 접속해야 카메라를 쓸 수 있습니다.",

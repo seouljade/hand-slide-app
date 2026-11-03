@@ -229,3 +229,21 @@ input[type="range"] { width: 100%; accent-color: var(--amber); }
   .set-row input { grid-column: 1 / -1; grid-row: 2; }
   .thumbs { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── 카메라 켜기 안내 ── */
+.cam-view { display: grid; gap: 10px; }
+.cam-msg > div { display: grid; gap: 10px; justify-items: center; }
+.cam-msg p { color: var(--text); }
+.cam-msg p.muted { color: var(--muted); }
+.cam-help {
+  display: grid; gap: 8px; padding: 12px 14px;
+  border: 1px solid var(--amber); border-left-width: 4px; background: rgba(242, 169, 0, 0.07);
+  font-size: 13px;
+}
+.cam-help-title { color: var(--amber); font-weight: 800; }
+.cam-help-steps { padding-left: 20px; display: grid; gap: 4px; }
+.cam-help-copy { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cam-help-copy code { padding: 3px 8px; background: #0f120a; border: 1px solid var(--line); font-size: 12px; user-select: all; }
+.cam-help-auto { color: var(--cyan); font-size: 12px; }
+.cam-help-actions { margin-top: 2px; }
+a.btn { display: inline-block; text-decoration: none; }

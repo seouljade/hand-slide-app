@@ -1,4 +1,5 @@
 import { DEFAULT_SETTINGS, SLIDE_LOG_LIMIT, type RecognitionSettings } from "../config";
+import type { CameraErrorKind } from "../lib/camera";
 import { CHECK_LABELS, CHECK_ORDER, type CheckKey, type CheckResult } from "../lib/checks";
 import type { Gesture } from "../lib/gesture";
 import { SLIDES } from "../data/slides";
@@ -6,6 +7,8 @@ import { SLIDES } from "../data/slides";
 export type Screen = "prep" | "present";
 export type CameraStatus = "idle" | "on" | "off";
 export type NavSource = "hand" | "key";
+/** 카메라가 꺼진 이유. lost 는 쓰는 중에 끊긴 경우 */
+export type CameraIssue = CameraErrorKind | "lost";
 export type LogTone = "normal" | "good" | "warn";
 
 export interface LogEntry {
@@ -27,6 +30,7 @@ export interface AppState {
   checks: Record<CheckKey, CheckResult>;
   camera: CameraStatus;
   cameraMessage: string;
+  cameraIssue: CameraIssue | null;
   startError: string;
   slide: number;
   slideDir: 1 | -1;
@@ -42,7 +46,7 @@ export interface AppState {
 export type Action =
   | { type: "check"; key: CheckKey; result: CheckResult }
   | { type: "cameraOn" }
-  | { type: "cameraOff"; message: string; at: number }
+  | { type: "cameraOff"; issue: CameraIssue; message: string; at: number }
   | { type: "cameraBack"; at: number }
   | { type: "start"; at: number }
   | { type: "back" }
@@ -61,6 +65,7 @@ export function initialState(): AppState {
     checks,
     camera: "idle",
     cameraMessage: "",
+    cameraIssue: null,
     startError: "",
     slide: 0,
     slideDir: 1,
@@ -102,19 +107,20 @@ export function reducer(s: AppState, a: Action): AppState {
       return { ...next, startError: s.startError && startBlocker(next) };
     }
     case "cameraOn":
-      return { ...s, camera: "on", cameraMessage: "" };
+      return { ...s, camera: "on", cameraMessage: "", cameraIssue: null };
     case "cameraOff": {
-      if (s.camera !== "on") return { ...s, camera: "off", cameraMessage: a.message };
+      if (s.camera !== "on") return { ...s, camera: "off", cameraMessage: a.message, cameraIssue: a.issue };
       const next: AppState = {
         ...s,
         camera: "off",
         cameraMessage: a.message,
+        cameraIssue: a.issue,
         checks: { ...s.checks, camera: { status: "fail", detail: "끊김", hint: a.message } },
       };
       return addLog(next, "카메라 꺼짐", a.at, "warn");
     }
     case "cameraBack":
-      return addLog({ ...s, camera: "on", cameraMessage: "" }, "카메라 복귀", a.at, "good");
+      return addLog({ ...s, camera: "on", cameraMessage: "", cameraIssue: null }, "카메라 복귀", a.at, "good");
     case "start": {
       const blocker = startBlocker(s);
       if (blocker) return { ...s, startError: blocker };

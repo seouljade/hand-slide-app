@@ -15,6 +15,7 @@ export function App() {
 
   useEffect(() => {
     runtime.start();
+    void runtime.autoStart();
     return () => runtime.stop();
   }, [runtime]);
 
